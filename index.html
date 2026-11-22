@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arbeidshefte - Tall</title>
+  <link rel="icon" type="image/png" href="logo.svg">
+  <link rel="apple-touch-icon" href="logo.svg">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <!-- VENSTREMENY -->
+    <aside class="sidebar no-print">
+      <!-- Topp: Ikon, Tittel & Logg inn -->
+      <div class="sidebar-top">
+        <div class="brand-group">
+          <div class="brand-icon" onclick="openAppSwitchModal()" title="Bytt hefte / verktøy" style="background: transparent; cursor: pointer;">
+            <img src="logo.svg" alt="Bytt hefte" width="38" height="38">
+          </div>
+          <div>
+            <h1>Arbeidshefte - Tall</h1>
+            <p class="subtitle">Utskriftsklare matteark (1–20)</p>
+          </div>
+        </div>
+        <div id="auth-btn-wrapper">
+          <button type="button" id="sidebarLoginBtn" class="btn-login-pill">
+            🔒 Logg inn
+          </button>
+          <button type="button" id="sidebarLogoutBtn" class="btn-login-pill logged-in hidden">
+            ✓ Hånes skole (Logg ut)
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-section-label">VELG UKE / TALL (1–20)</div>
+
+      <!-- Rullbar liste med kort for Ark 1–20 -->
+      <div id="sheet-cards-list" class="sheet-cards-list"></div>
+
+      <!-- Fast bunnpanel -->
+      <div class="sidebar-bottom">
+        <div class="bottom-tools-row">
+          <button type="button" id="btn-edit-weeks" class="btn-outline-tool">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Rediger ukenumre
+          </button>
+          <label class="page-num-toggle">
+            <input type="checkbox" id="chk-show-pagenums" checked />
+            <span>Vis sidetall</span>
+          </label>
+        </div>
+
+        <button type="button" id="btn-print" class="btn-print-main">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          Skriv ut
+        </button>
+      </div>
+    </aside>
+
+    <!-- FORHÅNDSVISNING (A4-ARK) -->
+    <main class="preview-area">
+      <div id="sheets-container"></div>
+    </main>
+  </div>
+
+<!-- INNLOGGINGSMODAL FOR HÅNES SKOLE -->
+<div id="loginModal" class="modal-backdrop no-print">
+  <div class="auth-modal-box">
+    <div class="auth-modal-header">
+      <div class="auth-modal-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <div>
+        <h3>Mattehefte – Hånes skole</h3>
+        <p>Logg inn for utskrift uten vannmerke</p>
+      </div>
+    </div>
+
+    <form id="haanesLoginForm" class="auth-modal-form">
+      <div class="auth-field">
+        <label for="loginUsername">Brukernavn</label>
+        <input type="text" id="loginUsername" autocomplete="username" placeholder="Skriv inn brukernavn" />
+      </div>
+
+      <div class="auth-field">
+        <label for="loginPassword">Passord</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Skriv inn passord" />
+      </div>
+
+      <p id="loginErrorMsg" class="auth-error-msg hidden">
+        ⚠️ Feil brukernavn eller passord. Prøv igjen.
+      </p>
+
+      <button type="submit" class="auth-btn-primary">
+        Logg inn
+      </button>
+
+      <div class="auth-divider"><span>eller</span></div>
+
+      <button type="button" id="btnContinueWatermark" class="auth-btn-secondary">
+        Åpne uten innlogging (med «Hånes skole»-vannmerke)
+      </button>
+    </form>
+  </div>
+</div>
+
+  <!-- MODAL: REDIGER UKENUMRE -->
+  <div id="weeks-modal" class="modal-backdrop hidden no-print">
+    <div class="modal-box modal-wide">
+      <h2>Rediger ukenumre</h2>
+      <p>Tilpass uketeksten for hvert arbeidsark (lagres automatisk).</p>
+      <div id="weeks-editor-grid" class="weeks-editor-grid"></div>
+      <div class="modal-actions">
+        <button type="button" id="btn-reset-weeks" class="btn-modal-sec">Tilbakestill standard</button>
+        <button type="button" id="btn-close-weeks" class="btn-modal-pri">Ferdig</button>
+      </div>
+    </div>
+  </div>
+
+<!-- MODAL 1: SKRIV UT ARBEIDSARK -->
+<div id="print-options-modal" class="modal-backdrop no-print hidden">
+  <div class="pmodal-box pmodal-medium">
+    <div class="pmodal-header pmodal-header-indigo">
+      <div class="pmodal-header-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <h2>Skriv ut matteark</h2>
+      </div>
+      <button type="button" class="pmodal-close" data-close-pmodal="print-options-modal">✕</button>
+    </div>
+
+    <div class="pmodal-body">
+      <div class="pmodal-section-label">HVA VIL DU SKRIVE UT?</div>
+      <div class="pmodal-radio-grid">
+        <label class="pmodal-radio-card active" id="print-scope-selected-card">
+          <input type="radio" name="printScope" value="selected" checked />
+          <div>
+            <strong>Ark valgt i venstremenyen</strong>
+            <span>Følger synlige og valgte ark</span>
+          </div>
+        </label>
+
+        <label class="pmodal-radio-card" id="print-scope-current-card">
+          <input type="radio" name="printScope" value="current" />
+          <div>
+            <strong>Gjeldende arbeidsark</strong>
+            <span id="print-current-label">Arket som er valgt nå</span>
+          </div>
+        </label>
+      </div>
+
+      <hr class="pmodal-divider" />
+
+      <label class="pmodal-checkbox-row" id="print-toc-row">
+        <input type="checkbox" id="print-include-ark0" checked />
+        <span>Inkluder Forside og Innholdsfortegnelse (Ark 0)</span>
+      </label>
+
+      <div class="pmodal-estimate-box">
+        <span>Beregnet utskrift:</span>
+        <strong id="print-estimate-text">0 ark (0 sider)</strong>
+      </div>
+    </div>
+
+    <div class="pmodal-footer">
+      <button type="button" class="pmodal-btn pmodal-btn-ghost" data-close-pmodal="print-options-modal">Avbryt</button>
+      <button type="button" class="pmodal-btn pmodal-btn-indigo" id="btn-do-normal-print">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Vanlig utskrift
+      </button>
+      <button type="button" class="pmodal-btn pmodal-btn-green" id="btn-open-pdf-guide">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Lag PDF for hefte
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 2: VEILEDNING FOR LAGRING AV PDF -->
+<div id="pdf-guide-modal" class="modal-backdrop no-print hidden">
+  <div class="pmodal-box pmodal-large">
+    <div class="pmodal-header pmodal-header-green">
+      <div class="pmodal-header-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div>
+          <h2>Lag PDF for hefteutskrift</h2>
+          <p class="pmodal-subtitle">Veiledning for lagring av PDF og hefteutskrift</p>
+        </div>
+      </div>
+      <button type="button" class="pmodal-close" data-close-pmodal="pdf-guide-modal">✕</button>
+    </div>
+
+    <div class="pmodal-body">
+      <h3 class="pmodal-step-title">1. Lagre som PDF:</h3>
+      <ol class="pmodal-ol">
+        <li>Velg <a href="#" class="pmodal-zoom-link" data-zoom-img="utskrift/03.png" data-zoom-title="Velg «Lagre som PDF» under Destinasjon">«Lagre som PDF» 🔍</a> under Destinasjon.</li>
+        <li>Behold <strong>A4</strong> som papirstørrelse og <strong>100 % skalering</strong>.</li>
+        <li>Klikk <strong>«Lagre»</strong>.</li>
+      </ol>
+
+      <div class="pmodal-step2-header">
+        <h3 class="pmodal-step-title">2. Skriv ut PDF-filen som hefte:</h3>
+        <div class="pmodal-tabs" data-tab-group="guide">
+          <button type="button" class="pmodal-tab active" data-tab-target="guide-browser">I nettleseren</button>
+          <button type="button" class="pmodal-tab" data-tab-target="guide-adobe">I Adobe Reader</button>
+        </div>
+      </div>
+
+      <div class="pmodal-tab-pane active" id="guide-browser">
+        <ol class="pmodal-ol">
+          <li>Velg <strong>Sikkerprint</strong>, åpne <strong>Flere innstillinger</strong>, fjern krysset for <strong>Tosidig</strong> og klikk <strong>Skriv ut med systemdialogen (Ctrl+Shift+P)</strong>.</li>
+          <li>Fjern krysset for <strong>La appen endre utskriftsinnstillingene</strong> og klikk <strong>Flere innstillinger</strong>.</li>
+          <li>Velg <strong>A3</strong> som papirstørrelse, <strong>Venstre til høyre</strong> under Hefteutskrift og <strong>2 i midten</strong> under Hefting.</li>
+        </ol>
+        <div class="pmodal-thumbs-grid cols-3">
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01_01.png" data-zoom-title="1. Systemdialog">
+            <span>1. Systemdialog 🔍</span>
+            <img src="utskrift/01_01.png" alt="1. Systemdialog" />
+          </div>
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01_02.png" data-zoom-title="2. Flere innstillinger">
+            <span>2. Flere innstillinger 🔍</span>
+            <img src="utskrift/01_02.png" alt="2. Flere innstillinger" />
+          </div>
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01_03.png" data-zoom-title="3. A3 og Hefting">
+            <span>3. A3 og Hefting 🔍</span>
+            <img src="utskrift/01_03.png" alt="3. A3 og Hefting" />
+          </div>
+        </div>
+      </div>
+
+      <div class="pmodal-tab-pane" id="guide-adobe">
+        <ol class="pmodal-ol">
+          <li>Åpne PDF-filen i <strong>Adobe Reader</strong> og trykk <strong>Skriv ut (Ctrl + P)</strong>.</li>
+          <li>Velg <strong>Hefte</strong> under Sidestørrelse og håndtering, og sett papirstørrelse til <strong>A3</strong> (samt <strong>2 i midten</strong> under Hefting i skriveregenskapene).</li>
+        </ol>
+        <div class="pmodal-thumbs-grid cols-2">
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01.png" data-zoom-title="1. Velg Hefte/Layout">
+            <span>1. Velg Hefte/Layout 🔍</span>
+            <img src="utskrift/01.png" alt="1. Velg Hefte/Layout" />
+          </div>
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/02.png" data-zoom-title="2. Velg Papirstørrelse (A3)">
+            <span>2. Velg Papirstørrelse (A3) 🔍</span>
+            <img src="utskrift/02.png" alt="2. Velg Papirstørrelse (A3)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="pmodal-zoom-hint">Klikk på et bilde for å forstørre det.</div>
+    </div>
+
+    <div class="pmodal-footer space-between">
+      <button type="button" class="pmodal-btn pmodal-btn-plain" data-close-pmodal="pdf-guide-modal">Avbryt</button>
+      <button type="button" class="pmodal-btn pmodal-btn-green" id="btn-continue-save-pdf">
+        Fortsett og lagre PDF →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: PDF-EN ER KLAR (STEG 2) -->
+<div id="pdf-ready-modal" class="modal-backdrop no-print hidden">
+  <div class="pmodal-box pmodal-large">
+    <div class="pmodal-header pmodal-header-blue">
+      <div class="pmodal-header-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1z"/></svg>
+        <div>
+          <h2>PDF-en er klar – slik skriver du ut hefte</h2>
+          <p class="pmodal-subtitle">Steg 2: Åpne PDF-filen og velg hefteutskrift</p>
+        </div>
+      </div>
+      <button type="button" class="pmodal-close" data-close-pmodal="pdf-ready-modal">✕</button>
+    </div>
+
+<div class="pmodal-body">
+      <div class="pmodal-open-pdf-banner">
+        <h3>1. Åpne den lagrede PDF-filen:</h3>
+        <p>Klikk på knappen under for å åpne PDF-en i nettleseren, eller åpne filen direkte i <strong>Adobe Reader</strong> fra datamaskinen:</p>
+        <input type="file" id="pdf-file-picker" accept="application/pdf" class="hidden" />
+        <button type="button" class="pmodal-btn pmodal-btn-blue" id="btn-open-saved-pdf">
+          📁 Velg og åpne PDF-filen i nettleser
+        </button>
+        <div id="opened-pdf-link-wrap" class="hidden" style="margin-top: 6px;">
+          <a id="opened-pdf-link" href="#" target="_blank" rel="noopener" class="pmodal-btn pmodal-btn-green" style="text-decoration: none;">
+            📄 Klikk her for å åpne PDF-en i ny fane →
+          </a>
+        </div>
+      </div>
+
+      <div class="pmodal-step2-header">
+        <h3 class="pmodal-step-title">2. Trykk Skriv ut (Ctrl + P) og følg veiledningen:</h3>
+        <div class="pmodal-tabs" data-tab-group="ready">
+          <button type="button" class="pmodal-tab active" data-tab-target="ready-browser">Åpnet i nettleser</button>
+          <button type="button" class="pmodal-tab" data-tab-target="ready-adobe">Åpnet i Adobe Reader</button>
+        </div>
+      </div>
+
+      <div class="pmodal-tab-pane active" id="ready-browser">
+        <ol class="pmodal-ol">
+          <li>Velg <strong>Sikkerprint</strong>, åpne <strong>Flere innstillinger</strong>, fjern krysset for <strong>Tosidig</strong> og klikk <strong>Skriv ut med systemdialogen (Ctrl+Shift+P)</strong>.</li>
+          <li>Fjern krysset for <strong>La appen endre utskriftsinnstillingene</strong> og klikk <strong>Flere innstillinger</strong>.</li>
+          <li>Velg <strong>A3</strong> som papirstørrelse, <strong>Venstre til høyre</strong> under Hefteutskrift og <strong>2 i midten</strong> under Hefting.</li>
+        </ol>
+        <div class="pmodal-thumbs-grid cols-3">
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01_01.png" data-zoom-title="1. Systemdialog">
+            <span>1. Systemdialog 🔍</span>
+            <img src="utskrift/01_01.png" alt="1. Systemdialog" />
+          </div>
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01_02.png" data-zoom-title="2. Flere innstillinger">
+            <span>2. Flere innstillinger 🔍</span>
+            <img src="utskrift/01_02.png" alt="2. Flere innstillinger" />
+          </div>
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01_03.png" data-zoom-title="3. A3 og Hefting">
+            <span>3. A3 og Hefting 🔍</span>
+            <img src="utskrift/01_03.png" alt="3. A3 og Hefting" />
+          </div>
+        </div>
+      </div>
+
+      <div class="pmodal-tab-pane" id="ready-adobe">
+        <ol class="pmodal-ol">
+          <li>Åpne PDF-filen i <strong>Adobe Reader</strong> og trykk <strong>Skriv ut (Ctrl + P)</strong>.</li>
+          <li>Velg <strong>Hefte</strong> under Sidestørrelse og håndtering, og sett papirstørrelse til <strong>A3</strong> (samt <strong>2 i midten</strong> under Hefting i skriveregenskapene).</li>
+        </ol>
+        <div class="pmodal-thumbs-grid cols-2">
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/01.png" data-zoom-title="1. Velg Hefte/Layout">
+            <span>1. Velg Hefte/Layout 🔍</span>
+            <img src="utskrift/01.png" alt="1. Velg Hefte/Layout" />
+          </div>
+          <div class="pmodal-thumb-card" data-zoom-img="utskrift/02.png" data-zoom-title="2. Velg Papirstørrelse (A3)">
+            <span>2. Velg Papirstørrelse (A3) 🔍</span>
+            <img src="utskrift/02.png" alt="2. Velg Papirstørrelse (A3)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="pmodal-zoom-hint">Klikk på et bilde for å forstørre det.</div>
+    </div>
+
+    <div class="pmodal-footer">
+      <button type="button" class="pmodal-btn pmodal-btn-dark" data-close-pmodal="pdf-ready-modal">Ferdig / Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 4: FORSTØRRELSESVISNING AV VEILEDNINGSBILDE -->
+<div id="guide-zoom-modal" class="modal-backdrop no-print hidden">
+  <div class="pmodal-box pmodal-zoom-box">
+    <div class="pmodal-header pmodal-header-dark">
+      <h2 id="guide-zoom-title">Veiledningsbilde</h2>
+      <button type="button" class="pmodal-close" data-close-pmodal="guide-zoom-modal">✕</button>
+    </div>
+    <div class="pmodal-zoom-body">
+      <img id="guide-zoom-img" src="" alt="Forstørret veiledning" />
+    </div>
+  </div>
+</div>
+
+<!-- FLYTENDE ZOOM-KONTROLL -->
+<div id="floatingZoom" class="no-print floating-zoom" aria-label="Zoom-kontroll">
+  <button type="button" id="btn-zoom-in" title="Zoom inn" aria-label="Zoom inn">+</button>
+  <button type="button" id="zoomValText" title="Tilbakestill til automatisk tilpasning" aria-label="Tilbakestill zoom">Auto</button>
+  <button type="button" id="btn-zoom-out" title="Zoom ut" aria-label="Zoom ut">&minus;</button>
+</div>
+
+<!-- Modal for å bytte mellom Arbeidshefter -->
+<div id="appSwitchModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 9999; align-items: center; justify-content: center; padding: 16px;" onclick="if(event.target === this) closeAppSwitchModal()">
+  <div class="auth-modal-box" style="max-width: 390px;">
+    <div class="auth-modal-header" style="background: #0277bd;">
+      <div class="auth-modal-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+        </svg>
+      </div>
+      <div>
+        <h3>Bytt verktøy</h3>
+        <p>1. trinn – Utskriftsklare hefter</p>
+      </div>
+    </div>
+
+    <div class="auth-modal-form" style="gap: 12px;">
+      <p style="margin: 0; font-size: 0.9rem; color: #334155; line-height: 1.45;">
+        Hvilket hefte for <strong>1. trinn</strong> vil du åpne?
+      </p>
+
+      <a href="https://77tor.github.io/leseark/" class="auth-btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; box-sizing: border-box; text-align: center;">
+        <span>Lesehefte for 1. trinn</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
+
+      <button type="button" class="auth-btn-secondary" onclick="closeAppSwitchModal()">
+        Bli i Mattehefte
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- Oppgavebank-register -->
+  <script>
+    window.MATTE_DATA = {};
+  </script>
+
+  <!-- Last inn alle 20 ark for matte -->
+  <script src="matte/matte_01.js"></script>
+  <script src="matte/matte_02.js"></script>
+  <script src="matte/matte_03.js"></script>
+  <script src="matte/matte_04.js"></script>
+  <script src="matte/matte_05.js"></script>
+  <script src="matte/matte_06.js"></script>
+  <script src="matte/matte_07.js"></script>
+  <script src="matte/matte_08.js"></script>
+  <script src="matte/matte_09.js"></script>
+  <script src="matte/matte_10.js"></script>
+  <script src="matte/matte_11.js"></script>
+  <script src="matte/matte_12.js"></script>
+  <script src="matte/matte_13.js"></script>
+  <script src="matte/matte_14.js"></script>
+  <script src="matte/matte_15.js"></script>
+  <script src="matte/matte_16.js"></script>
+  <script src="matte/matte_17.js"></script>
+  <script src="matte/matte_18.js"></script>
+  <script src="matte/matte_19.js"></script>
+  <script src="matte/matte_20.js"></script>
+
+  <!-- Hovedlogikk -->
+  <script src="app.js"></script>
+</body>
+</html>
