@@ -1,19 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-  <title id="title">Mattelogo med tallet 1</title>
-  <desc id="desc">Lilla sirkel med hvit ring og et stort hvitt ett-tall med jevn, avrundet skråhake og uten tverrstrek nederst.</desc>
-  <circle cx="512" cy="512" r="500" fill="#7600A8"/>
-  <circle cx="512" cy="512" r="430" fill="none" stroke="#FFFFFF" stroke-width="18"/>
-  <path fill="#FFFFFF" d="
-    M 344,326
-    C 326,296 337,259 367,240
-    L 500,158
-    C 545,130 596,166 596,216
-    L 596,800
-    C 596,850 565,882 515,882
-    C 466,882 435,850 435,800
-    L 435,340
-    L 407,359
-    C 380,378 355,360 344,336
-    C 342,333 343,329 344,326
-    Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="123">
+  <g fill="#7000A8" transform="translate(22.000,482.697) scale(0.142120,-0.304291)">
+    <path d="M766 1490H398L32 1266V922L364 1125H366V0H766Z" transform="translate(0,0)"/><path d="M75 0H1219V322H639V324L880 520C1078 681 1215 816 1215 1039C1215 1335 975 1514 645 1514C284 1514 60 1299 60 952H441C441 1107 523 1194 644 1194C755 1194 829 1122 829 1016C829 887 718 809 635 742L75 290Z" transform="translate(771,0)"/><path d="M654 -24C1019 -24 1266 165 1266 420C1266 598 1146 756 922 779V782C1091 802 1220 918 1220 1100C1220 1343 988 1514 658 1514C294 1514 78 1305 78 1032H466C466 1139 548 1214 658 1214C763 1214 839 1145 839 1050C839 953 760 896 626 896H482V616H626C765 616 854 551 854 451C854 354 771 286 652 286C520 286 440 371 440 512H50C50 234 228 -24 654 -24Z" transform="translate(1987,0)"/>
+  </g>
 </svg>
