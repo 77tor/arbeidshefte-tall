@@ -309,7 +309,7 @@
         <button type="button" class="mini-chip ${cfg.matte.intro ? "on" : ""}" data-sub="matte.intro">Tall ${numVal}</button>
         <button type="button" class="mini-chip ${cfg.matte.dice ? "on" : ""}" data-sub="matte.dice">Terning</button>
         <button type="button" class="mini-chip ${cfg.matte.neighbors ? "on" : ""}" data-sub="matte.neighbors">Nabotall</button>
-        <button type="button" class="mini-chip ${cfg.matte.quantity ? "on" : ""}" data-sub="matte.quantity">Mengde</button>
+        <button type="button" class="mini-chip ${cfg.matte.quantity ? "on" : ""}" data-sub="matte.quantity">${Number(numVal) >= 11 ? "Tallinje" : "Mengde"}</button>
         <button type="button" class="mini-chip ${cfg.matte.count ? "on" : ""}" data-sub="matte.count">Tell og skriv</button>
       ` : "";
 
