@@ -12,8 +12,8 @@ window.MATTE_DATA[20] = {
     { antall: 12, symbol: "bilder/matte_bil.png" }
   ],
   telleOppgaver: [
-    { antall: 13, symbol: "bilder/matte_viskelær.png" },
-    { antall: 14, symbol: "bilder/matte_blyant.png" },
-    { antall: 9, symbol: "bilder/matte_spisser.png" }
+    { antall: 18, symbol: "bilder/matte_viskelær.png" },
+    { antall: 20, symbol: "bilder/matte_blyant.png" },
+    { antall: 14, symbol: "bilder/matte_spisser.png" }
   ]
 };
