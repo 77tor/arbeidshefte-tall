@@ -593,7 +593,30 @@
         </div>`;
     }
 
-    if (cfg.quantity && Array.isArray(matte.mengder)) {
+const tallNum = Number(matte.tall);
+    const tlConfig = tallNum >= 11 ? (matte.tallinje || DEFAULT_NUMBER_LINES[tallNum]) : null;
+
+if (cfg.quantity && tlConfig) {
+      const topLine = tlConfig.top || tlConfig;
+      const botLine = tlConfig.bot || tlConfig;
+      const ekstra = Array.isArray(botLine.ekstraTall)
+        ? botLine.ekstraTall
+        : [botLine.start + 1, Math.round((botLine.start + botLine.end) / 2), botLine.end - 1];
+      const badgesHTML = ekstra.map((n) => `<span class="tl-target-badge">${n}</span>`).join("");
+
+html += `
+        <div class="task-block numberline-block">
+          <div class="numberline-subtask">
+            <p class="task-title">${taskNum++}. Plasser dagens tall (<strong class="tl-highlight">${tallNum}</strong>) på tallinjen:</p>
+            ${renderNumberLineSVG(topLine.start, topLine.end, topLine.step, true, tallNum)}
+          </div>
+          <div class="numberline-subtask with-divider">
+            <p class="task-title">Sett strek fra de tre tallene ned til riktig plass på tallinjen:</p>
+            <div class="tl-badges-wrap">${badgesHTML}</div>
+            ${renderNumberLineSVG(botLine.start, botLine.end, botLine.step, true, ekstra)}
+          </div>
+        </div>`;
+    } else if (cfg.quantity && Array.isArray(matte.mengder)) {
       const maxPerRow = Number(matte.tall) > 12 ? 7 : 5;
       html += `
         <div class="task-block">
@@ -699,7 +722,7 @@
     const cfg0 = sheetSettings[0] || { visible: true, showToc: true };
     const showCover = Boolean(cfg0.visible);
     const showToc = Boolean(cfg0.visible && cfg0.showToc);
-    const showCoverBack = Boolean(showCover && showToc);
+    const showCoverBack = false;
 
     const taskPages = [];
     const tocEntries = [];
@@ -898,6 +921,111 @@
     updatePageScale();
     initScrollSync();
   }
+
+// TEGN TALLINJE SOM SVG (onlyThreeHints = true viser kun start, midt og slutt, aldri tallene i excludeVals)
+  function renderNumberLineSVG(start, end, step, onlyThreeHints = false, excludeVals = []) {
+    const padX = 28;
+    const width = 680;
+    const usableW = width - padX * 2;
+    const totalUnits = end - start;
+    const majorCount = Math.round(totalUnits / step);
+
+    const excludedSet = new Set(
+      Array.isArray(excludeVals) ? excludeVals : (excludeVals !== null ? [excludeVals] : [])
+    );
+
+    // Finn hvilke 3 tall som skal vises (start, ca. midt i og slutt – aldri et av de ekskluderte tallene)
+    let visibleValues = null;
+    if (onlyThreeHints) {
+      let midIdx = Math.floor(majorCount / 2);
+      if (excludedSet.has(start + midIdx * step)) {
+        for (let offset = 1; offset < majorCount; offset++) {
+          if (midIdx - offset > 0 && !excludedSet.has(start + (midIdx - offset) * step)) {
+            midIdx = midIdx - offset;
+            break;
+          }
+          if (midIdx + offset < majorCount && !excludedSet.has(start + (midIdx + offset) * step)) {
+            midIdx = midIdx + offset;
+            break;
+          }
+        }
+      }
+      visibleValues = new Set([start, start + midIdx * step, end]);
+      excludedSet.forEach((v) => visibleValues.delete(v));
+    }
+
+    let ticksHTML = "";
+    for (let i = 0; i <= majorCount; i++) {
+      const val = start + i * step;
+      const x = padX + (i / majorCount) * usableW;
+      const showLabel = !visibleValues || visibleValues.has(val);
+
+      ticksHTML += `
+        <line x1="${x.toFixed(1)}" y1="24" x2="${x.toFixed(1)}" y2="44" stroke="#6500A8" stroke-width="2.4" stroke-linecap="round"/>
+        ${showLabel ? `<text x="${x.toFixed(1)}" y="64" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14.5" font-weight="700" fill="#1e293b">${val}</text>` : ""}
+      `;
+
+      // Små mellomstreker ved 2-tallshopp og 5-tallshopp for enklere plassering
+      if (i < majorCount && step > 1) {
+        for (let s = 1; s < step; s++) {
+          const subX = x + (s / step) * (usableW / majorCount);
+          ticksHTML += `<line x1="${subX.toFixed(1)}" y1="29" x2="${subX.toFixed(1)}" y2="39" stroke="#a855f7" stroke-width="1.3" stroke-linecap="round"/>`;
+        }
+      }
+    }
+
+    return `
+      <svg class="numberline-svg" viewBox="0 0 ${width} 74" aria-label="Tallinje fra ${start} til ${end}" xmlns="http://www.w3.org/2000/svg">
+        <line x1="12" y1="34" x2="${width - 12}" y2="34" stroke="#6500A8" stroke-width="2.6" stroke-linecap="round"/>
+        <polyline points="${width - 20},27 ${width - 10},34 ${width - 20},41" fill="none" stroke="#6500A8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        ${ticksHTML}
+      </svg>
+    `;
+  }
+
+// STANDARD TALLINJE-OPPSETT FOR ARK 11–20 (Ulik skala oppe og nede)
+  const DEFAULT_NUMBER_LINES = {
+    11: {
+      top: { start: 0, end: 15, step: 1 },
+      bot: { start: 2, end: 16, step: 2, ekstraTall: [9, 4, 14] }
+    },
+    12: {
+      top: { start: 0, end: 14, step: 2 },
+      bot: { start: 5, end: 15, step: 1, ekstraTall: [11, 7, 14] }
+    },
+    13: {
+      top: { start: 0, end: 20, step: 5 },
+      bot: { start: 4, end: 16, step: 2, ekstraTall: [12, 6, 15] }
+    },
+    14: {
+      top: { start: 7, end: 16, step: 1 },
+      bot: { start: 0, end: 20, step: 5, ekstraTall: [15, 5, 18] }
+    },
+    15: {
+      top: { start: 6, end: 18, step: 2 },
+      bot: { start: 8, end: 17, step: 1, ekstraTall: [13, 9, 16] }
+    },
+    16: {
+      top: { start: 10, end: 20, step: 1 },
+      bot: { start: 4, end: 20, step: 2, ekstraTall: [14, 7, 18] }
+    },
+    17: {
+      top: { start: 5, end: 20, step: 5 },
+      bot: { start: 10, end: 19, step: 1, ekstraTall: [16, 12, 18] }
+    },
+    18: {
+      top: { start: 10, end: 20, step: 2 },
+      bot: { start: 0, end: 20, step: 5, ekstraTall: [13, 5, 19] }
+    },
+    19: {
+      top: { start: 12, end: 22, step: 1 },
+      bot: { start: 6, end: 20, step: 2, ekstraTall: [15, 8, 18] }
+    },
+    20: {
+      top: { start: 0, end: 24, step: 2 },
+      bot: { start: 11, end: 20, step: 1, ekstraTall: [17, 13, 19] }
+    }
+  };
 
   function setupPrintModals() {
     const printBtn = document.getElementById("btn-print") || document.querySelector(".btn-print-main");
